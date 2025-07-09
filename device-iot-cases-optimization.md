@@ -5,10 +5,10 @@ authors:
 approvers:
   - 
 creation-date: 2025-07-02
-last-updated: 2025-07-05
+last-updated: 2025-07-09
 status: Implementable 
 ---
-<!--no toc--> # KubeEdge device management practice cases optimization
+# KubeEdge device management practice cases optimization
 ## Motivation
 The Kubeedge Examples repository provides users with many use cases, allowing them to quickly get started. However, many of the examples in the repository are currently developed based on the old version of kubeedge (before v1.15), and there are compatibility issues with the new version of kubeedge. Therefore, we need to optimize the examples in the repository so that they can run under the new version.
 
