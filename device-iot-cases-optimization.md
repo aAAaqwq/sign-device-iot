@@ -8,34 +8,7 @@ creation-date: 2025-07-02
 last-updated: 2025-07-05
 status: Implementable 
 ---
-# KubeEdge device management practice cases optimization
----
-- [KubeEdge device management practice cases optimization](#kubeedge-device-management-practice-cases-optimization)
-  - [Motivation](#motivation)
-  - [Goals](#goals)
-    - [Develop a temperature sensor Mapper plug-in based on the latest version of Mapper-Framework](#develop-a-temperature-sensor-mapper-plug-in-based-on-the-latest-version-of-mapper-framework)
-    - [Optimize existing IoT cases](#optimize-existing-iot-cases)
-  - [Proposal](#proposal)
-    - [1. Temperature-sensor-mapper development and testing](#1-temperature-sensor-mapper-development-and-testing)
-      - [1.1 Architecture](#11-architecture)
-      - [1.2 CRDS Development](#12-crds-development)
-      - [1.3 Driver Development](#13-driver-development)
-      - [1.4 Analog Implementation of Temperature Sensor Device](#14-analog-implementation-of-temperature-sensor-device)
-        - [1.4.1 via Modbus-Slave](#141-via-modbus-slave)
-        - [1.4.2 via gomodbus](#142-via-gomodbus)
-      - [1.5 Deploy to KubeEdge environment for testing](#15-deploy-to-kubeedge-environment-for-testing)
-    - [2. kubeedge-counter-demo Case Optimization](#2-kubeedge-counter-demo-case-optimization)
-      - [2.1 Analysis](#21-analysis)
-        - [2.1.1 Native implementation:](#211-native-implementation)
-        - [2.1.2 Insufficient analysis](#212-insufficient-analysis)
-      - [2.2 Details of the optimization plan](#22-details-of-the-optimization-plan)
-        - [2.2.1  Compatibility Optimization](#221--compatibility-optimization)
-        - [2.2.2 Usability Optimization](#222-usability-optimization)
-  - [Planning](#planning)
-    - [Phase 1 of Project Development: Mapper Plugin Development and Testing （July 01 - July 20）](#phase-1-of-project-development-mapper-plugin-development-and-testing-july-01---july-20)
-    - [Phase 2 of Project Development: Optimization of Existing Cases （07/21 - 08/05）](#phase-2-of-project-development-optimization-of-existing-cases-0721---0805)
-    - [Phase 3 of Project Development	: Refinement, Reflection, and Summary （08/06 - 09/01）](#phase-3-of-project-development-refinement-reflection-and-summary-0806---0901)
----
+<!--no toc--> # KubeEdge device management practice cases optimization
 ## Motivation
 The Kubeedge Examples repository provides users with many use cases, allowing them to quickly get started. However, many of the examples in the repository are currently developed based on the old version of kubeedge (before v1.15), and there are compatibility issues with the new version of kubeedge. Therefore, we need to optimize the examples in the repository so that they can run under the new version.
 
@@ -96,7 +69,7 @@ Reference [v1beta1/device_instance_types](https://github.com/kubeedge/kubeedge/b
   - Custom protocol Modbus: Supports TCP and RTU modes
   - Add custom fields such as dataType, register, scale, offset, scale, isSwap, isRegister, max, min, etc. to properties.visitors.configData to facilitate driver operations 
   - Add methods for RESTful API calls
-  - Optional: Push observedDesired and pushMethod in the twins field to the mqtt broker.
+  - Optional: Enable pushmethod to push data to the specified end
   - By customizing the scaling factor, Min/Max, and communicateMode in configData, temperature supports floating-point input/output, threshold warnings, as well as rtu and tcp protocols 
 ```yaml
 apiVersion: devices.kubeedge.io/v1beta1
@@ -164,31 +137,6 @@ spec:
       description: update the temperature of the device
       propertyNames:
         - temperature
-status:
-  # twins:
-  #   - propertyName: temperature
-  #     reported:
-  #       metadata:
-  #         timestamp: "1688663400"
-  #         type: "float"
-  #       value: "25.5"
-  #     observedDesired:
-  #       metadata:
-  #         timestamp: "1688663400"
-  #         type: "float"
-  #       value: "25.5"
-  #   - propertyName: status
-  #     reported:
-  #       metadata:
-  #         timestamp: "1688663400"
-  #         type: "int"
-  #       value: "1"
-  #     observedDesired:
-  #       metadata:
-  #         timestamp: "1688663400"
-  #         type: "int"
-  #       value: "1"
-    
 ```
 
 #### 1.3 Driver Development
@@ -242,26 +190,7 @@ func main() {
   - Then, access the mapper's RESTful API via port 7777 to verify the device data collected in the mapper. Additionally, you can check the twins.reported field in the device.yaml file on the cloud to verify whether the data has been uploaded to the cloud. 
   - Finally, a web app can be built and deployed to the cloud for visual inspection of the results
 ### 2. kubeedge-counter-demo Case Optimization
-#### 2.1 Analysis
-##### 2.1.1 Native implementation:
-  - Core Components:
-      - Counter-Mapper
-        - The Mapper integrates a pseudo-device of a counter, with the counter's default state being OFF and running on the edge side. 
-      - Web-controller-app
-        - Runs on the cloud and provides a User Interface to operate the counter. 
-      - crds
-   - Working Principle:
-      - Mapper subscribes to the MQTT topic $hw/events/device/counter/twin/update/document to receive control commands
-      - When it receives the expected control command, it will perform the operation of turning the counter on/off 
-      - The Mapper will update the value of the counter every 1 second and publish it to the topic $hw/events/device/counter/twin/update 
-      - In this way, the counter state between the edge and the cloud is synchronized 
-  - Data Stream:
-      - Mapper publishes device status and collected data to EdgeCore via MQTT topics
-      - The EventBus component in EdgeCore receives MQTT messages 
-      - The DeviceTwin module processes these messages and stores the state 
-      - EdgeCore sends device twin data to CloudCore via WebSocket
-      - CloudCore updates the device CRD status in Kubernetes
-##### 2.1.2 Insufficient analysis
+#### 2.1 Insufficient analysis
   - Usability: In the new version, manual installation of MQTT Broker is required, and the deployment steps are rather cumbersome.
   - Compatibility: 
     - Deprecated from Kubernetes 1.16 and completely removed in 1.21, cluster version ≥ 1.16, must use   rbac.authorization.k8s.io/v1
@@ -293,20 +222,7 @@ func main() {
   - Simplify the operation of web pages 
   - Provide more detailed documentation
 
-## Planning
-### Phase 1 of Project Development: Mapper Plugin Development and Testing （July 01 - July 20）
-- CRDS Development
-- Driver Development
-- Modbus Emulator
-- Development
-- Deployment Test
-### Phase 2 of Project Development: Optimization of Existing Cases （07/21 - 08/05）	
-- Refactoring counter-mapper 
-- Refactoring web-controller-app 
-- Improve usability
-### Phase 3 of Project Development	: Refinement, Reflection, and Summary （08/06 - 09/01）
-- Resolve issues identified during the mid-term acceptance stage
-- Complete the testing and documentation for the first phase
-- Complete the testing and documentation for the second phase
-- Reflect on areas for improvement and summarize
-
+## Plan
+### In version 1.21
+- Add a modbus mapper to the example repository
+- Optimizing the counter-mapper example
